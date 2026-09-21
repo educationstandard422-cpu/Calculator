@@ -1,4 +1,14 @@
-name: Build Calculator APK
+- name: Accept Android SDK licenses
+  run: |
+    yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+- name: Install Android SDK Build Tools
+  run: |
+    $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+      "platform-tools" \
+      "platforms;android-35" \
+      "build-tools;37.0.0"
+      name: Build Calculator APK
 
 on:
   workflow_dispatch:
