@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -42,6 +42,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # અહીં આપણે સત્તાવાર એન્ડ્રોઇડ SDK અને sdkmanager સીધા જ સેટ કરીએ છીએ
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
@@ -49,21 +53,12 @@ jobs:
           pip install --user Cython==0.29.37
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Accept Android SDK Licenses Manually & Build
+      - name: Build APK with Buildozer
         run: |
-          # Android command-line tools ડાઉનલોડ કરીને લાયસન્સ ઓટો-એકસેપ્ટ કરવા માટે
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools
+          # SDK ના લાયસન્સ ઓટોમેટિક સ્વીકારી લો
+          yes | sdkmanager --licenses || true
           
-          # Buildozer ને રન કરો જેથી તે ડાઉનલોડ શરૂ કરે, અને લાયસન્સ ફોર્સફુલી પાસ કરો
-          yes | buildozer android debug || true
-          
-          # જો SDK બન્યા પછી પણ લાયસન્સ બાકી હોય તો તેને ફિક્સ કરવા માટે
-          if [ -d "$ANDROID_HOME" ]; then
-              yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          fi
-          
-          # ફાઇનલી ફરીથી બિલ્ડ રન કરો
+          # બિલ્ડ કરો
           buildozer android debug
 
       - name: Upload Calculator APK
