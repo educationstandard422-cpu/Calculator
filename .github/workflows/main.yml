@@ -1,19 +1,10 @@
-- name: Accept Android SDK licenses
-  run: |
-    yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-- name: Install Android SDK Build Tools
-  run: |
-    $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-      "platform-tools" \
-      "platforms;android-35" \
-      "build-tools;37.0.0"
-      name: Build Calculator APK
+name: Build Calculator APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -23,31 +14,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk python3-pip \
-            autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev cmake \
-            libffi-dev libssl-dev
+            git zip unzip \
+            openjdk-17-jdk \
+            python3 python3-venv python3-pip \
+            autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev
 
-      - name: Extract project
+      - name: Accept Android SDK licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install Android SDK packages
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;37.0.0"
+
+      - name: Extract Calculator project
         run: |
           unzip -q Calculator_Android_Project.zip -d project
 
-      - name: Install Buildozer
+      - name: Create Python virtual environment
         run: |
-          python3 -m pip install --user buildozer cython
+          python3 -m venv buildenv
+          buildenv/bin/python -m pip install --upgrade pip setuptools wheel
+          buildenv/bin/pip install buildozer cython
 
-      - name: Build APK
+      - name: Build Calculator APK
         working-directory: project/Calculator
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          buildozer android debug
+          ../../buildenv/bin/buildozer android debug
 
-      - name: Upload APK
+      - name: Upload Calculator APK
         uses: actions/upload-artifact@v4
         with:
           name: Calculator-APK
           path: project/Calculator/bin/*.apk
+          if-no-files-found: error
