@@ -1,67 +1,93 @@
 name: Build Calculator APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip \
+            git \
+            zip \
+            unzip \
             openjdk-17-jdk \
-            python3 python3-venv python3-pip \
-            autoconf automake libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            cmake libffi-dev libssl-dev
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: Install Android SDK packages
-        run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;37.0.0"
-
-      - name: Extract Calculator project
-        run: |
-          unzip -q Calculator_Android_Project.zip -d project
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
+            libffi-dev \
+            libssl-dev
 
       - name: Create Python virtual environment
         run: |
-          python3 -m venv buildenv
-          buildenv/bin/python -m pip install --upgrade pip setuptools wheel
-          buildenv/bin/pip install "Cython<3.0" buildozer
+          python -m venv buildenv
+          source buildenv/bin/activate
 
-      - name: Check Cython
+          python -m pip install --upgrade pip setuptools wheel
+
+          pip install \
+            buildozer \
+            cython==0.29.37
+
+      - name: Configure virtual environment
         run: |
-          export PATH="$GITHUB_WORKSPACE/buildenv/bin:$PATH"
-          cython --version
+          source buildenv/bin/activate
+
+          # Make the virtual environment able to see system packages.
+          # This avoids the Buildozer --user/pip conflict.
+          VENV_CFG="buildenv/pyvenv.cfg"
+
+          if grep -q "^include-system-site-packages" "$VENV_CFG"; then
+            sed -i \
+              's/^include-system-site-packages.*/include-system-site-packages = true/' \
+              "$VENV_CFG"
+          else
+            echo "include-system-site-packages = true" >> "$VENV_CFG"
+          fi
+
+          cat "$VENV_CFG"
+
+      - name: Check Python
+        run: |
+          source buildenv/bin/activate
+          python --version
+          pip --version
           buildozer --version
 
       - name: Build Calculator APK
-        working-directory: project/Calculator
+        env:
+          PIP_USER: "0"
         run: |
-          export PATH="$GITHUB_WORKSPACE/buildenv/bin:$PATH"
-          cython --version
+          source buildenv/bin/activate
+
+          export PIP_USER=0
+          export PIP_NO_USER_CONFIG=1
+
           buildozer android debug
 
       - name: Upload Calculator APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Calculator-APK
-          path: project/Calculator/bin/*.apk
-          if-no-files-found: error
+          path: |
+            bin/*.apk
