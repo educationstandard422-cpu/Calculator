@@ -44,12 +44,20 @@ jobs:
         run: |
           python3 -m venv buildenv
           buildenv/bin/python -m pip install --upgrade pip setuptools wheel
-          buildenv/bin/pip install buildozer cython
+          buildenv/bin/pip install "Cython<3.0" buildozer
+
+      - name: Check Cython
+        run: |
+          export PATH="$GITHUB_WORKSPACE/buildenv/bin:$PATH"
+          cython --version
+          buildozer --version
 
       - name: Build Calculator APK
         working-directory: project/Calculator
         run: |
-          ../../buildenv/bin/buildozer android debug
+          export PATH="$GITHUB_WORKSPACE/buildenv/bin:$PATH"
+          cython --version
+          buildozer android debug
 
       - name: Upload Calculator APK
         uses: actions/upload-artifact@v4
