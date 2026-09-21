@@ -51,15 +51,25 @@ jobs:
           pip install --user Cython==0.29.37
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Pre-create Android SDK directories & Accept Licenses
+      - name: Install Android Command-Line Tools Manually
         run: |
-          # SDK માટેનું ફોલ્ડર પહેલેથી જ બનાવી દઈએ
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
+          # SDK અને cmdline-tools માટે જરૂરી ફોલ્ડર બનાવો
+          ANDROID_SDK=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_SDK/cmdline-tools
           
-          # એન્ડ્રોઇડ SDK ના લાયસન્સ ફાઇલો બનાવીને તેમાં 'hash' નાખી દઈએ જેથી લાયસન્સની એરર ક્યારેય ન આવે
-          echo "24333f8a43b682ff23c510562b82a21fb15f206f" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a648b0" >> $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          # સત્તાવાર Android command-line tools ડાઉનલોડ કરો
+          echo "Downloading command-line tools..."
+          curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          
+          # અનઝિપ કરો અને સાચા ફોલ્ડર (latest) માં મૂકો
+          unzip -q commandlinetools.zip -d $ANDROID_SDK/cmdline-tools
+          mv $ANDROID_SDK/cmdline-tools/cmdline-tools $ANDROID_SDK/cmdline-tools/latest
+          
+          # લાયસન્સ ફાઇલો પહેલેથી જ ક્રિએટ કરી દો
+          mkdir -p $ANDROID_SDK/licenses
+          echo "24333f8a43b682ff23c510562b82a21fb15f206f" > $ANDROID_SDK/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> $ANDROID_SDK/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a648b0" >> $ANDROID_SDK/licenses/android-sdk-license
 
       - name: Build APK with Buildozer
         run: |
