@@ -11,14 +11,17 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      # 1. Repository download
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # 3. Install system packages
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -28,6 +31,7 @@ jobs:
             unzip \
             openjdk-17-jdk \
             autoconf \
+            automake \
             libtool \
             pkg-config \
             zlib1g-dev \
@@ -37,57 +41,40 @@ jobs:
             libffi-dev \
             libssl-dev
 
-      - name: Create Python virtual environment
+      # 4. Install Python packages
+      - name: Install Buildozer
         run: |
-          python -m venv buildenv
-          source buildenv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install --user buildozer
+          python -m pip install --user "Cython==0.29.37"
 
-          python -m pip install --upgrade pip setuptools wheel
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-          pip install \
-            buildozer \
-            cython==0.29.37
-
-      - name: Configure virtual environment
+      # 5. Check files
+      - name: Check project files
         run: |
-          source buildenv/bin/activate
+          echo "Current directory:"
+          pwd
 
-          # Make the virtual environment able to see system packages.
-          # This avoids the Buildozer --user/pip conflict.
-          VENV_CFG="buildenv/pyvenv.cfg"
+          echo "Files:"
+          ls -la
 
-          if grep -q "^include-system-site-packages" "$VENV_CFG"; then
-            sed -i \
-              's/^include-system-site-packages.*/include-system-site-packages = true/' \
-              "$VENV_CFG"
-          else
-            echo "include-system-site-packages = true" >> "$VENV_CFG"
-          fi
-
-          cat "$VENV_CFG"
-
-      - name: Check Python
-        run: |
-          source buildenv/bin/activate
-          python --version
-          pip --version
+          echo "Buildozer version:"
           buildozer --version
 
+          echo "Python version:"
+          python --version
+
+      # 6. Build APK
       - name: Build Calculator APK
-        env:
-          PIP_USER: "0"
         run: |
-          source buildenv/bin/activate
-
-          export PIP_USER=0
-          export PIP_NO_USER_CONFIG=1
-
           buildozer android debug
 
+      # 7. Upload APK
       - name: Upload Calculator APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Calculator-APK
           path: |
             bin/*.apk
+          if-no-files-found: error
