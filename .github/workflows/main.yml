@@ -51,9 +51,18 @@ jobs:
           pip install --user Cython==0.29.37
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Pre-create Android SDK directories & Accept Licenses
+        run: |
+          # SDK માટેનું ફોલ્ડર પહેલેથી જ બનાવી દઈએ
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
+          
+          # એન્ડ્રોઇડ SDK ના લાયસન્સ ફાઇલો બનાવીને તેમાં 'hash' નાખી દઈએ જેથી લાયસન્સની એરર ક્યારેય ન આવે
+          echo "24333f8a43b682ff23c510562b82a21fb15f206f" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a648b0" >> $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+
       - name: Build APK with Buildozer
         run: |
-          # Buildozer ને સીધું જ રન કરો, તે જરૂરી SDK અને લાયસન્સ જાતે હેન્ડલ કરશે
           buildozer android debug
 
       - name: Upload Calculator APK
