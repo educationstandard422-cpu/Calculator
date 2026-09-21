@@ -1,0 +1,43 @@
+name: Build Calculator APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk python3-pip \
+            autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev
+
+      - name: Extract project
+        run: |
+          unzip -q Calculator_Android_Project.zip -d project
+
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --user --break-system-packages buildozer cython
+
+      - name: Build APK
+        working-directory: project/Calculator
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calculator-APK
+          path: project/Calculator/bin/*.apk
