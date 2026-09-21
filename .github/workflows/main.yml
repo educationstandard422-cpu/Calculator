@@ -19,11 +19,39 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build with Buildozer
-        uses: AndroidBuilder.github.io/buildozer-action@main
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libffi-dev \
+            libssl-dev \
+            ant
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          command: android debug
-          buildozer_version: master
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          pip install --user buildozer
+          pip install --user Cython==0.29.37
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Build with Buildozer
+        run: |
+          buildozer android debug
 
       - name: Upload Calculator APK
         uses: actions/upload-artifact@v4
