@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Buildozer
         run: |
-          python3 -m pip install --user 
+          python3 -m pip install --user buildozer cython
 
       - name: Build APK
         working-directory: project/Calculator
