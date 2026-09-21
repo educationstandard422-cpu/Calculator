@@ -49,9 +49,21 @@ jobs:
           pip install --user Cython==0.29.37
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Accept Android SDK Licenses & Build APK
+      - name: Accept Android SDK Licenses Manually & Build
         run: |
-          mkdir -p ~/.buildozer
+          # Android command-line tools ડાઉનલોડ કરીને લાયસન્સ ઓટો-એકસેપ્ટ કરવા માટે
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          
+          # Buildozer ને રન કરો જેથી તે ડાઉનલોડ શરૂ કરે, અને લાયસન્સ ફોર્સફુલી પાસ કરો
+          yes | buildozer android debug || true
+          
+          # જો SDK બન્યા પછી પણ લાયસન્સ બાકી હોય તો તેને ફિક્સ કરવા માટે
+          if [ -d "$ANDROID_HOME" ]; then
+              yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          fi
+          
+          # ફાઇનલી ફરીથી બિલ્ડ રન કરો
           buildozer android debug
 
       - name: Upload Calculator APK
