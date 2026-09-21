@@ -21,6 +21,7 @@ jobs:
 
       - name: Install System Dependencies
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y \
             git \
@@ -30,8 +31,9 @@ jobs:
             libtool \
             pkg-config \
             zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
+            libncurses5:i386 \
+            libstdc++6:i386 \
+            libz1:i386 \
             libffi-dev \
             libssl-dev \
             ant
@@ -42,10 +44,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # અહીં આપણે સત્તાવાર એન્ડ્રોઇડ SDK અને sdkmanager સીધા જ સેટ કરીએ છીએ
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
@@ -55,10 +53,7 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          # SDK ના લાયસન્સ ઓટોમેટિક સ્વીકારી લો
-          yes | sdkmanager --licenses || true
-          
-          # બિલ્ડ કરો
+          # Buildozer ને સીધું જ રન કરો, તે જરૂરી SDK અને લાયસન્સ જાતે હેન્ડલ કરશે
           buildozer android debug
 
       - name: Upload Calculator APK
