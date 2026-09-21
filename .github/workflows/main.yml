@@ -49,8 +49,9 @@ jobs:
           pip install --user Cython==0.29.37
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Build with Buildozer
+      - name: Accept Android SDK Licenses & Build APK
         run: |
+          mkdir -p ~/.buildozer
           buildozer android debug
 
       - name: Upload Calculator APK
